@@ -27,10 +27,19 @@ interface VoiceProviderProps {
 
 export const VoiceProvider: React.FC<VoiceProviderProps> = ({ 
   children, 
-  agentId = "your-agent-id" 
+  agentId = "demo-agent-placeholder" 
 }) => {
   const [isListening, setIsListening] = useState(false);
   
+  // Mock conversation for demo purposes - replace with real agentId
+  const conversation = {
+    status: 'disconnected' as const,
+    startSession: async () => console.log('Demo: Voice session would start with agentId:', agentId),
+    endSession: async () => console.log('Demo: Voice session ended'),
+  };
+  
+  // Real conversation (commented out until API key is provided)
+  /*
   const conversation = useConversation({
     onConnect: () => {
       console.log('Voice conversation connected');
@@ -76,23 +85,27 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({
       }
     }
   });
+  */
 
   const startVoiceControl = useCallback(async () => {
     try {
-      // Request microphone permission
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // For demo purposes, we'll use a mock agent ID
-      // In production, you would get this from your ElevenLabs dashboard
-      await conversation.startSession({ 
-        agentId: agentId 
+      // Demo mode - replace with real ElevenLabs integration
+      toast({
+        title: "Demo Mode",
+        description: "Voice control is in demo mode. Add your ElevenLabs API key to enable full functionality.",
       });
+      await conversation.startSession();
       setIsListening(true);
+      
+      // Auto-stop after 3 seconds in demo mode
+      setTimeout(() => {
+        setIsListening(false);
+      }, 3000);
     } catch (error) {
       console.error('Failed to start voice control:', error);
       toast({
-        title: "Microphone Access Required",
-        description: "Please enable microphone access to use voice control.",
+        title: "Demo Mode Active",
+        description: "Add your ElevenLabs API key for full voice control.",
         variant: "destructive",
       });
     }
@@ -118,7 +131,7 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({
   }, []);
 
   const value: VoiceContextType = {
-    isConnected: conversation.status === 'connected',
+    isConnected: false, // Demo mode - always disconnected
     isListening,
     startVoiceControl,
     stopVoiceControl,
