@@ -78,6 +78,20 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({
         }
         return "Section not found";
       },
+      navigateToCarDetail: (parameters: { carId: string }) => {
+        window.location.href = `/car/${parameters.carId}`;
+        return `Navigating to car details for vehicle ${parameters.carId}`;
+      },
+      navigateToComparison: (parameters: { car1Id?: string, car2Id?: string }) => {
+        let url = '/compare';
+        const params = new URLSearchParams();
+        if (parameters.car1Id) params.set('car1', parameters.car1Id);
+        if (parameters.car2Id) params.set('car2', parameters.car2Id);
+        if (params.toString()) url += '?' + params.toString();
+        
+        window.location.href = url;
+        return `Opening vehicle comparison tool`;
+      },
       searchCars: (parameters: { query: string }) => {
         // Implement car search functionality
         console.log('Searching for cars:', parameters.query);

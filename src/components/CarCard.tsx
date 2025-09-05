@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useVoice } from './VoiceProvider';
+import { useNavigate } from 'react-router-dom';
 
 interface Car {
   id: string;
@@ -22,10 +23,11 @@ interface CarCardProps {
 
 export const CarCard: React.FC<CarCardProps> = ({ car }) => {
   const { speak } = useVoice();
+  const navigate = useNavigate();
 
   const handleViewDetails = () => {
-    speak(`Showing details for ${car.year} ${car.name}`);
-    // Add your car details navigation logic here
+    speak(`Viewing details for ${car.name}. This ${car.year} model is priced at ${formatPrice(car.price)} with ${car.mileage}.`);
+    navigate(`/car/${car.id}`);
   };
 
   const formatPrice = (price: number) => {
