@@ -1,24 +1,19 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Search, Filter, Grid3x3, List, ChevronLeft, ChevronRight, Car, Fuel, Settings, X } from 'lucide-react';
 import { VoiceProvider } from '@/components/VoiceProvider';
 import { VoiceButton } from '@/components/VoiceButton';
-import { CarCard } from '@/components/CarCard';
-import { 
-  Search, 
-  Filter, 
-  Grid3X3, 
-  List, 
-  Car, 
-  SlidersHorizontal,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { CarCardSkeleton } from '@/components/ui/skeleton';
+import { LoadingOverlay } from '@/components/ui/loading-spinner';
+import { useLoading, simulateNetworkDelay } from '@/hooks/use-loading';
+import { toast } from '@/hooks/use-toast';
 
 interface Car {
   id: string;
@@ -43,6 +38,8 @@ const Inventory = () => {
   const [sortBy, setSortBy] = useState('price-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const { isLoading, withLoading } = useLoading();
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Sample expanded inventory data
   const allCars: Car[] = [
@@ -176,6 +173,15 @@ const Inventory = () => {
     currentPage * carsPerPage
   );
 
+  // Enhanced search with loading
+  const handleSearch = useCallback(async (term: string) => {
+    await withLoading(async () => {
+      await simulateNetworkDelay(300);
+      setSearchTerm(term);
+      setCurrentPage(1);
+    });
+  }, [withLoading]);
+  
   const resetFilters = useCallback(() => {
     setSearchTerm('');
     setPriceRange([0, 200000]);
@@ -183,6 +189,19 @@ const Inventory = () => {
     setSelectedBodyType('all');
     setSortBy('price-asc');
     setCurrentPage(1);
+    toast({
+      title: "Filters Reset",
+      description: "All search filters have been cleared.",
+    });
+  }, []);
+
+  // Simulate initial data loading
+  useEffect(() => {
+    const loadInitialData = async () => {
+      await simulateNetworkDelay(800);
+      setInitialLoad(false);
+    };
+    loadInitialData();
   }, []);
 
   return (
@@ -317,7 +336,7 @@ const Inventory = () => {
                     onClick={() => setShowFilters(!showFilters)}
                     className="lg:hidden"
                   >
-                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    <Settings className="h-4 w-4 mr-2" />
                     Filters
                   </Button>
                   
@@ -349,7 +368,7 @@ const Inventory = () => {
                       onClick={() => setViewMode('grid')}
                       className="p-2"
                     >
-                      <Grid3X3 className="h-4 w-4" />
+                      <Grid3x3 className="h-4 w-4" />
                     </Button>
                     <Button
                       variant={viewMode === 'list' ? 'default' : 'ghost'}
@@ -370,8 +389,45 @@ const Inventory = () => {
                     ? 'grid md:grid-cols-2 xl:grid-cols-3 gap-6' 
                     : 'space-y-4'
                 }>
-                  {currentCars.map((car) => (
-                    <CarCard key={car.id} car={car} />
+                  {currentCars.map((car, index) => (
+                    <Card 
+                      key={car.id} 
+                      className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <CardContent className="p-0">
+                        <div className="relative overflow-hidden">
+                          <img
+                            src={car.image}
+                            alt={car.name}
+                            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                          {car.isNew && (
+                            <Badge className="absolute top-2 right-2 bg-gradient-to-r from-primary to-accent animate-pulse-glow">
+                              New
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">{car.name}</h3>
+                          <p className="text-sm text-muted-foreground mb-3">{car.year}</p>
+                          <div className="flex justify-between items-center mb-3">
+                            <span className="text-2xl font-bold text-primary">
+                              ${car.price.toLocaleString()}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {typeof car.mileage === 'string' ? car.mileage : `${car.mileage} mi`}
+                            </span>
+                          </div>
+                          <Link to={`/car/${car.id}`}>
+                            <Button className="w-full" size="sm">
+                              View Details
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               ) : (
