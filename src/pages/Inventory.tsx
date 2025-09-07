@@ -6,14 +6,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Search, Filter, Grid3x3, List, ChevronLeft, ChevronRight, Car, Fuel, Settings, X } from 'lucide-react';
+import { Search, Filter, Grid3x3, List, ChevronLeft, ChevronRight, Car, Fuel, Settings, X, Mic } from 'lucide-react';
 import { VoiceProvider } from '@/components/VoiceProvider';
 import { VoiceButton } from '@/components/VoiceButton';
+import { VoiceSearchAssistant } from '@/components/VoiceSearchAssistant';
+import { AdvancedFilters } from '@/components/AdvancedFilters';
 import { Link } from 'react-router-dom';
 import { CarCardSkeleton } from '@/components/ui/skeleton';
 import { LoadingOverlay } from '@/components/ui/loading-spinner';
 import { useLoading, simulateNetworkDelay } from '@/hooks/use-loading';
 import { toast } from '@/hooks/use-toast';
+import { CarFilters } from '@/types/car';
+import { sampleCars } from '@/data/cars';
 
 interface Car {
   id: string;
@@ -32,17 +36,22 @@ interface Car {
 const Inventory = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const [priceRange, setPriceRange] = useState([0, 200000]);
-  const [selectedBrand, setSelectedBrand] = useState('all');
-  const [selectedBodyType, setSelectedBodyType] = useState('all');
-  const [sortBy, setSortBy] = useState('price-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [showVoiceSearch, setShowVoiceSearch] = useState(false);
+  const [filters, setFilters] = useState<Partial<CarFilters>>({
+    priceMin: 0,
+    priceMax: 500000,
+    makes: [],
+    vehicleTypes: [],
+    conditions: [],
+    fuelTypes: [],
+    transmissions: [],
+  });
   const { isLoading, withLoading } = useLoading();
   const [initialLoad, setInitialLoad] = useState(true);
 
-  // Sample expanded inventory data
-  const allCars: Car[] = [
+  const allCars = sampleCars;
     {
       id: '1',
       name: 'BMW M4 Competition',
@@ -144,27 +153,24 @@ const Inventory = () => {
     },
   ];
 
-  const brands = ['all', ...Array.from(new Set(allCars.map(car => car.brand)))];
-  const bodyTypes = ['all', ...Array.from(new Set(allCars.map(car => car.bodyType)))];
+  const handleFiltersChange = useCallback((newFilters: Partial<CarFilters>) => {
+    setFilters(newFilters);
+    setCurrentPage(1);
+  }, []);
 
-  const filteredCars = allCars.filter(car => {
-    const matchesSearch = car.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         car.brand.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPrice = car.price >= priceRange[0] && car.price <= priceRange[1];
-    const matchesBrand = selectedBrand === 'all' || car.brand === selectedBrand;
-    const matchesBodyType = selectedBodyType === 'all' || car.bodyType === selectedBodyType;
-    
-    return matchesSearch && matchesPrice && matchesBrand && matchesBodyType;
-  }).sort((a, b) => {
-    switch (sortBy) {
-      case 'price-asc': return a.price - b.price;
-      case 'price-desc': return b.price - a.price;
-      case 'year-desc': return b.year - a.year;
-      case 'year-asc': return a.year - b.year;
-      case 'name-asc': return a.name.localeCompare(b.name);
-      default: return 0;
-    }
-  });
+  const resetFilters = useCallback(() => {
+    setFilters({
+      priceMin: 0,
+      priceMax: 500000,
+      makes: [],
+      vehicleTypes: [],
+      conditions: [],
+      fuelTypes: [],
+      transmissions: [],
+    });
+    setSearchTerm('');
+    setCurrentPage(1);
+  }, []);
 
   const carsPerPage = 9;
   const totalPages = Math.ceil(filteredCars.length / carsPerPage);
@@ -221,6 +227,15 @@ const Inventory = () => {
               </div>
               
               <div className="flex items-center space-x-3">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowVoiceSearch(true)}
+                  className="animate-pulse-glow"
+                >
+                  <Mic className="h-4 w-4 mr-2" />
+                  Voice Search
+                </Button>
                 <VoiceButton />
                 <Button>Contact Sales</Button>
               </div>
@@ -246,83 +261,24 @@ const Inventory = () => {
           </div>
 
           <div className="grid lg:grid-cols-4 gap-6">
-            {/* Filters Sidebar */}
+            {/* Advanced Filters Sidebar */}
             <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-              <Card className="sticky top-24">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold">Filters</h3>
-                    <Button variant="ghost" size="sm" onClick={resetFilters}>
-                      Reset
-                    </Button>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Search */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Search</label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search cars..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-9"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Price Range */}
-                    <div>
-                      <label className="text-sm font-medium mb-3 block">
-                        Price Range: ${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}
-                      </label>
-                      <Slider
-                        value={priceRange}
-                        onValueChange={setPriceRange}
-                        max={400000}
-                        min={0}
-                        step={5000}
-                        className="mb-4"
-                      />
-                    </div>
-
-                    {/* Brand Filter */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Brand</label>
-                      <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select brand" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {brands.map(brand => (
-                            <SelectItem key={brand} value={brand}>
-                              {brand === 'all' ? 'All Brands' : brand}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Body Type Filter */}
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Body Type</label>
-                      <Select value={selectedBodyType} onValueChange={setSelectedBodyType}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select body type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bodyTypes.map(type => (
-                            <SelectItem key={type} value={type}>
-                              {type === 'all' ? 'All Types' : type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="sticky top-24 space-y-4">
+                <div className="flex items-center space-x-2 mb-4">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search cars..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+                <AdvancedFilters
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onReset={resetFilters}
+                />
+              </div>
             </div>
 
             {/* Main Content */}
@@ -346,19 +302,9 @@ const Inventory = () => {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  {/* Sort */}
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                      <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                      <SelectItem value="year-desc">Year: Newest First</SelectItem>
-                      <SelectItem value="year-asc">Year: Oldest First</SelectItem>
-                      <SelectItem value="name-asc">Name: A to Z</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Sort by: Price, Year, Name
+                  </p>
 
                   {/* View Toggle */}
                   <div className="flex items-center border rounded-lg p-1">
@@ -479,6 +425,20 @@ const Inventory = () => {
             </div>
           </div>
         </div>
+        
+        {/* Voice Search Assistant */}
+        <VoiceSearchAssistant
+          isOpen={showVoiceSearch}
+          onClose={() => setShowVoiceSearch(false)}
+          onFiltersUpdate={handleFiltersChange}
+          currentFilters={filters}
+          onSearch={() => {
+            toast({
+              title: "Voice Search Complete",
+              description: `Found ${filteredCars.length} vehicles matching your criteria.`,
+            });
+          }}
+        />
       </div>
     </VoiceProvider>
   );
