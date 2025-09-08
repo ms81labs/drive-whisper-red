@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useVoice } from './VoiceProvider';
 import { useNavigate } from 'react-router-dom';
+import { Car } from '@/types/car';
 
-interface Car {
+// Simple car interface for backward compatibility
+interface SimpleCar {
   id: string;
   name: string;
   year: number;
@@ -18,7 +20,7 @@ interface Car {
 }
 
 interface CarCardProps {
-  car: Car;
+  car: Car | SimpleCar;
 }
 
 export const CarCard: React.FC<CarCardProps> = ({ car }) => {
@@ -26,7 +28,8 @@ export const CarCard: React.FC<CarCardProps> = ({ car }) => {
   const navigate = useNavigate();
 
   const handleViewDetails = () => {
-    speak(`Viewing details for ${car.name}. This ${car.year} model is priced at ${formatPrice(car.price)} with ${car.mileage}.`);
+    const mileageText = typeof car.mileage === 'string' ? car.mileage : `${car.mileage} km`;
+    speak(`Viewing details for ${car.name}. This ${car.year} model is priced at ${formatPrice(car.price)} with ${mileageText}.`);
     navigate(`/car/${car.id}`);
   };
 
@@ -65,7 +68,7 @@ export const CarCard: React.FC<CarCardProps> = ({ car }) => {
           </div>
           
           <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-            <span>{car.mileage}</span>
+            <span>{typeof car.mileage === 'string' ? car.mileage : `${car.mileage.toLocaleString()} km`}</span>
             <span>•</span>
             <span>{car.fuelType}</span>
             <span>•</span>
