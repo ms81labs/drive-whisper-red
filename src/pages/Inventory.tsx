@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Search, Filter, Grid3x3, List, ChevronLeft, ChevronRight, Car, Fuel, Settings, X, Mic } from 'lucide-react';
+import { Search, Filter, Grid3x3, List, ChevronLeft, ChevronRight, Car as CarIcon, Fuel, Settings, X, Mic } from 'lucide-react';
 import { VoiceProvider } from '@/components/VoiceProvider';
 import { VoiceButton } from '@/components/VoiceButton';
 import { VoiceSearchAssistant } from '@/components/VoiceSearchAssistant';
@@ -16,22 +16,8 @@ import { CarCardSkeleton } from '@/components/ui/skeleton';
 import { LoadingOverlay } from '@/components/ui/loading-spinner';
 import { useLoading, simulateNetworkDelay } from '@/hooks/use-loading';
 import { toast } from '@/hooks/use-toast';
-import { CarFilters } from '@/types/car';
 import { sampleCars } from '@/data/cars';
-
-interface Car {
-  id: string;
-  name: string;
-  year: number;
-  price: number;
-  image: string;
-  mileage: string;
-  fuelType: string;
-  transmission: string;
-  bodyType: string;
-  brand: string;
-  isNew?: boolean;
-}
+import { Car, CarFilters } from '@/types/car';
 
 const Inventory = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -52,106 +38,33 @@ const Inventory = () => {
   const [initialLoad, setInitialLoad] = useState(true);
 
   const allCars = sampleCars;
-    {
-      id: '1',
-      name: 'BMW M4 Competition',
-      year: 2024,
-      price: 89500,
-      image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop',
-      mileage: '0 miles',
-      fuelType: 'Gas',
-      transmission: 'Automatic',
-      bodyType: 'Coupe',
-      brand: 'BMW',
-      isNew: true,
-    },
-    {
-      id: '2',
-      name: 'Mercedes-AMG C63',
-      year: 2023,
-      price: 75900,
-      image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400&h=300&fit=crop',
-      mileage: '12,500 miles',
-      fuelType: 'Gas',
-      transmission: 'Automatic',
-      bodyType: 'Sedan',
-      brand: 'Mercedes',
-    },
-    {
-      id: '3',
-      name: 'Audi RS6 Avant',
-      year: 2024,
-      price: 118000,
-      image: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=400&h=300&fit=crop',
-      mileage: '0 miles',
-      fuelType: 'Gas',
-      transmission: 'Automatic',
-      bodyType: 'Wagon',
-      brand: 'Audi',
-      isNew: true,
-    },
-    {
-      id: '4',
-      name: 'Porsche 911 Turbo S',
-      year: 2023,
-      price: 195000,
-      image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=300&fit=crop',
-      mileage: '5,200 miles',
-      fuelType: 'Gas',
-      transmission: 'Automatic',
-      bodyType: 'Coupe',
-      brand: 'Porsche',
-    },
-    {
-      id: '5',
-      name: 'Tesla Model S Plaid',
-      year: 2024,
-      price: 129990,
-      image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=400&h=300&fit=crop',
-      mileage: '0 miles',
-      fuelType: 'Electric',
-      transmission: 'Automatic',
-      bodyType: 'Sedan',
-      brand: 'Tesla',
-      isNew: true,
-    },
-    {
-      id: '6',
-      name: 'Lamborghini Huracán',
-      year: 2022,
-      price: 285000,
-      image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=300&fit=crop',
-      mileage: '8,900 miles',
-      fuelType: 'Gas',
-      transmission: 'Automatic',
-      bodyType: 'Coupe',
-      brand: 'Lamborghini',
-    },
-    {
-      id: '7',
-      name: 'Range Rover Sport',
-      year: 2023,
-      price: 95000,
-      image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop',
-      mileage: '15,000 miles',
-      fuelType: 'Gas',
-      transmission: 'Automatic',
-      bodyType: 'SUV',
-      brand: 'Land Rover',
-    },
-    {
-      id: '8',
-      name: 'Ferrari 488 GTB',
-      year: 2021,
-      price: 325000,
-      image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=400&h=300&fit=crop',
-      mileage: '12,400 miles',
-      fuelType: 'Gas',
-      transmission: 'Automatic',
-      bodyType: 'Coupe',
-      brand: 'Ferrari',
-    },
-  ];
+
+  // Enhanced search functionality with NLP
+  const filteredCars = useMemo(() => {
+    return allCars.filter(car => {
+      // Text search
+      if (searchTerm) {
+        const searchText = `${car.name} ${car.make} ${car.vehicleType} ${car.year}`.toLowerCase();
+        if (!searchText.includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Apply filters
+      if (filters.priceMin && car.price < filters.priceMin) return false;
+      if (filters.priceMax && car.price > filters.priceMax) return false;
+      if (filters.makes && filters.makes.length > 0 && !filters.makes.includes(car.make)) return false;
+      if (filters.vehicleTypes && filters.vehicleTypes.length > 0 && !filters.vehicleTypes.includes(car.vehicleType)) return false;
+      if (filters.fuelTypes && filters.fuelTypes.length > 0 && !filters.fuelTypes.includes(car.fuelType)) return false;
+      if (filters.transmissions && filters.transmissions.length > 0 && !filters.transmissions.includes(car.transmission)) return false;
+      if (filters.conditions && filters.conditions.length > 0) {
+        const condition = car.condition === 'new' ? 'New' : 'Used';
+        if (!filters.conditions.includes(condition)) return false;
+      }
+
+      return true;
+    });
+  }, [allCars, searchTerm, filters]);
 
   const handleFiltersChange = useCallback((newFilters: Partial<CarFilters>) => {
     setFilters(newFilters);
@@ -170,6 +83,10 @@ const Inventory = () => {
     });
     setSearchTerm('');
     setCurrentPage(1);
+    toast({
+      title: "Filters Reset",
+      description: "All search filters have been cleared.",
+    });
   }, []);
 
   const carsPerPage = 9;
@@ -187,19 +104,6 @@ const Inventory = () => {
       setCurrentPage(1);
     });
   }, [withLoading]);
-  
-  const resetFilters = useCallback(() => {
-    setSearchTerm('');
-    setPriceRange([0, 200000]);
-    setSelectedBrand('all');
-    setSelectedBodyType('all');
-    setSortBy('price-asc');
-    setCurrentPage(1);
-    toast({
-      title: "Filters Reset",
-      description: "All search filters have been cleared.",
-    });
-  }, []);
 
   // Simulate initial data loading
   useEffect(() => {
@@ -219,7 +123,7 @@ const Inventory = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <Link to="/" className="flex items-center space-x-2">
-                  <Car className="h-8 w-8 text-primary" />
+                  <CarIcon className="h-8 w-8 text-primary" />
                   <h1 className="text-2xl font-bold">RedLine Motors</h1>
                 </Link>
                 <span className="text-muted-foreground">/</span>
@@ -363,7 +267,7 @@ const Inventory = () => {
                               ${car.price.toLocaleString()}
                             </span>
                             <span className="text-sm text-muted-foreground">
-                              {typeof car.mileage === 'string' ? car.mileage : `${car.mileage} mi`}
+                              {car.mileage} mi
                             </span>
                           </div>
                           <Link to={`/car/${car.id}`}>
@@ -378,7 +282,7 @@ const Inventory = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <CarIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No vehicles found</h3>
                   <p className="text-muted-foreground mb-4">
                     Try adjusting your filters to see more results
