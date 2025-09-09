@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, Volume2, VolumeX, X, MessageCircle } from 'lucide-react';
 import { parseVoiceCommand, applyEntitiesToFilters } from '@/utils/nlp';
 import { CarFilters, ConversationState, VoiceCommand } from '@/types/car';
+import { WishlistItem } from '@/types/wishlist';
+import { WishlistManager } from './WishlistManager';
 import { toast } from '@/hooks/use-toast';
 
 interface VoiceSearchAssistantProps {
@@ -13,6 +15,7 @@ interface VoiceSearchAssistantProps {
   onFiltersUpdate: (filters: Partial<CarFilters>) => void;
   currentFilters: Partial<CarFilters>;
   onSearch: () => void;
+  onNoResultsFound?: (searchCriteria: any) => void;
 }
 
 interface ConversationMessage {
@@ -28,6 +31,7 @@ export const VoiceSearchAssistant: React.FC<VoiceSearchAssistantProps> = ({
   onFiltersUpdate,
   currentFilters,
   onSearch,
+  onNoResultsFound,
 }) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -37,6 +41,8 @@ export const VoiceSearchAssistant: React.FC<VoiceSearchAssistantProps> = ({
     currentStep: 'greeting',
     collectedFilters: {},
   });
+  const [showWishlist, setShowWishlist] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
 
   const recognitionRef = useRef<any | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -113,7 +119,7 @@ export const VoiceSearchAssistant: React.FC<VoiceSearchAssistantProps> = ({
   }, [isOpen]);
 
   const startConversation = useCallback(() => {
-    const welcomeMessage = "Welcome to RedLine Motors voice assistant! I can help you find the perfect car. Tell me what you're looking for - for example, 'I need a used SUV under thirty thousand euros with automatic transmission.'";
+    const welcomeMessage = "Welcome to RedLine Motors voice assistant! I'm here to help you find your perfect car. I can search our inventory, add items to your wishlist, or even look for cars from external sources if we don't have what you need. What are you looking for today?";
     
     addMessage('assistant', welcomeMessage);
     speak(welcomeMessage);
@@ -205,6 +211,15 @@ export const VoiceSearchAssistant: React.FC<VoiceSearchAssistantProps> = ({
       case 'reset_filters':
         handleReset();
         break;
+
+      case 'wishlist_request':
+      case 'add_to_wishlist':
+        handleWishlistRequest(entities, originalText);
+        break;
+
+      case 'external_search':
+        handleExternalSearchRequest(entities, originalText);
+        break;
         
       default:
         handleUnknownCommand(originalText);
@@ -243,11 +258,22 @@ export const VoiceSearchAssistant: React.FC<VoiceSearchAssistantProps> = ({
     
     setTimeout(() => {
       onSearch();
-      onClose();
-      toast({
-        title: "Search Complete",
-        description: "Found cars matching your voice search criteria!",
-      });
+      
+      // Simulate search results check
+      setTimeout(() => {
+        // Simulate finding results or not
+        const foundResults = Math.random() > 0.3; // 70% chance of finding results
+        
+        if (foundResults) {
+          onClose();
+          toast({
+            title: "Search Complete",
+            description: "Found cars matching your voice search criteria!",
+          });
+        } else {
+          handleNoResults();
+        }
+      }, 1000);
     }, 1500);
   }, [onSearch, onClose]);
 
@@ -270,8 +296,96 @@ export const VoiceSearchAssistant: React.FC<VoiceSearchAssistantProps> = ({
     speak(response);
   }, [onFiltersUpdate]);
 
+  const handleNoResults = useCallback(() => {
+    const response = "I didn't find any cars in our current inventory that match your criteria. However, I can help you in a few ways: I can add this to your wishlist and notify you when matching cars arrive, or I can search external sources like AutoTrader and other dealerships. Which would you prefer?";
+    addMessage('assistant', response);
+    speak(response);
+    
+    setConversationState(prev => ({
+      ...prev,
+      currentStep: 'awaiting_wishlist_decision',
+    }));
+  }, []);
+
+  const handleWishlistRequest = useCallback((entities: Record<string, any>, originalText: string) => {
+    const response = "Great choice! I'll help you add this to your wishlist so we can find the perfect car for you. Let me open the wishlist form.";
+    addMessage('assistant', response);
+    speak(response);
+    
+    setTimeout(() => {
+      setShowWishlist(true);
+    }, 1500);
+  }, []);
+
+  const handleExternalSearchRequest = useCallback((entities: Record<string, any>, originalText: string) => {
+    const response = "Excellent! I'll search external automotive sources including AutoTrader, CarGurus, and other dealership networks. This might take a moment, but I'll find the best options for you.";
+    addMessage('assistant', response);
+    speak(response);
+    
+    // Simulate external search
+    setTimeout(() => {
+      simulateExternalSearch();
+    }, 2000);
+  }, []);
+
+  const simulateExternalSearch = useCallback(() => {
+    const mockResults = [
+      "Found 3 matching vehicles on AutoTrader",
+      "Located 2 similar cars at nearby dealerships",
+      "Discovered 1 exact match on CarGurus"
+    ];
+    
+    const resultMessage = `Great news! ${mockResults.join(', ')}. I'll prepare a detailed report with prices, locations, and contact information. You can expect an email within the next hour with all the details.`;
+    
+    addMessage('assistant', resultMessage);
+    speak(resultMessage);
+    
+    toast({
+      title: "External Search Complete",
+      description: "Found multiple matches! Check your email for detailed results.",
+    });
+    
+    setTimeout(() => {
+      onClose();
+    }, 3000);
+  }, [onClose]);
+
+  const handleSubmitWishlist = useCallback((wishlistItem: Partial<WishlistItem>) => {
+    // In a real app, this would save to database
+    console.log('Wishlist item submitted:', wishlistItem);
+    
+    toast({
+      title: "Added to Wishlist",
+      description: `We'll search for your ${wishlistItem.desiredSpecs?.make || 'desired'} vehicle and contact you when we find matches!`,
+    });
+    
+    setShowWishlist(false);
+  }, []);
+
+  const handleRequestExternalSearch = useCallback((specifications: any) => {
+    // In a real app, this would trigger external search APIs
+    console.log('External search requested:', specifications);
+    
+    simulateExternalSearch();
+    setShowWishlist(false);
+  }, []);
+
   const handleUnknownCommand = useCallback((text: string) => {
-    const response = "I didn't quite understand that. Could you try rephrasing? For example, you could say 'I want a BMW SUV under 50,000 euros' or 'Show me electric cars with heated seats.'";
+    const lowerText = text.toLowerCase();
+    
+    // Check for wishlist-related keywords
+    if (lowerText.includes('wishlist') || lowerText.includes('add to list') || lowerText.includes('save for later')) {
+      handleWishlistRequest({}, text);
+      return;
+    }
+    
+    // Check for external search keywords
+    if (lowerText.includes('search everywhere') || lowerText.includes('look elsewhere') || lowerText.includes('external') || lowerText.includes('other dealer')) {
+      handleExternalSearchRequest({}, text);
+      return;
+    }
+    
+    const response = "I didn't quite understand that. You can say things like: 'I want a BMW SUV under 50,000 euros', 'Add this to my wishlist', 'Search external sources', or 'Show me electric cars with heated seats.'";
     addMessage('assistant', response);
     speak(response);
   }, []);
@@ -348,7 +462,7 @@ export const VoiceSearchAssistant: React.FC<VoiceSearchAssistantProps> = ({
       return "Do you prefer automatic or manual transmission?";
     }
     
-    return "Is there anything else specific you're looking for? Or should I search for cars with your current criteria?";
+    return "Is there anything else specific you're looking for? I can search our inventory, add to your wishlist, or look at external sources. Just let me know!";
   }, []);
 
   if (!isOpen) return null;
@@ -449,10 +563,19 @@ export const VoiceSearchAssistant: React.FC<VoiceSearchAssistantProps> = ({
           {/* Instructions */}
           <div className="text-xs text-muted-foreground text-center space-y-1">
             <p>💡 Try saying: "I want a used BMW SUV under 40,000 euros with heated seats"</p>
-            <p>🔄 Or: "Show me electric cars with automatic transmission"</p>
+            <p>🔄 Or: "Add this to my wishlist" / "Search external sources"</p>
+            <p>🌟 Or: "Show me electric cars with automatic transmission"</p>
           </div>
         </CardContent>
       </Card>
+
+      {/* Wishlist Manager Modal */}
+      <WishlistManager
+        isOpen={showWishlist}
+        onClose={() => setShowWishlist(false)}
+        onSubmitWishlist={handleSubmitWishlist}
+        onRequestExternalSearch={handleRequestExternalSearch}
+      />
     </div>
   );
 };

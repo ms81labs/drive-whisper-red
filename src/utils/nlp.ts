@@ -281,17 +281,30 @@ function parseNumber(str: string): number {
 }
 
 function determineIntent(text: string, entities: Record<string, any>): string {
-  if (text.includes('find') || text.includes('search') || text.includes('show') || text.includes('looking for')) {
+  const lowerText = text.toLowerCase();
+  
+  // Wishlist intents
+  if (lowerText.includes('wishlist') || lowerText.includes('add to list') || lowerText.includes('save for later') || lowerText.includes('keep looking') || lowerText.includes('notify me')) {
+    return 'wishlist_request';
+  }
+  
+  // External search intents
+  if (lowerText.includes('search everywhere') || lowerText.includes('look elsewhere') || lowerText.includes('external') || lowerText.includes('other dealer') || lowerText.includes('autotrader') || lowerText.includes('outside')) {
+    return 'external_search';
+  }
+  
+  // Search intents
+  if (lowerText.includes('find') || lowerText.includes('search') || lowerText.includes('show') || lowerText.includes('looking for')) {
     return 'search_cars';
-  } else if (text.includes('compare') || text.includes('comparison')) {
+  } else if (lowerText.includes('compare') || lowerText.includes('comparison')) {
     return 'compare_cars';
-  } else if (text.includes('detail') || text.includes('more info') || text.includes('tell me about')) {
+  } else if (lowerText.includes('detail') || lowerText.includes('more info') || lowerText.includes('tell me about')) {
     return 'car_details';
-  } else if (text.includes('reset') || text.includes('clear') || text.includes('start over')) {
+  } else if (lowerText.includes('reset') || lowerText.includes('clear') || lowerText.includes('start over')) {
     return 'reset_filters';
-  } else if (text.includes('yes') || text.includes('correct') || text.includes('right')) {
+  } else if (lowerText.includes('yes') || lowerText.includes('correct') || lowerText.includes('right')) {
     return 'confirm';
-  } else if (text.includes('no') || text.includes('wrong') || text.includes('change')) {
+  } else if (lowerText.includes('no') || lowerText.includes('wrong') || lowerText.includes('change')) {
     return 'deny';
   } else if (Object.keys(entities).length > 0) {
     return 'specify_filters';

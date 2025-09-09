@@ -342,6 +342,14 @@ const Inventory = () => {
               description: `Found ${filteredCars.length} vehicles matching your criteria.`,
             });
           }}
+          onNoResultsFound={(searchCriteria) => {
+            console.log('No results found for criteria:', searchCriteria);
+            toast({
+              title: "Expanding Search",
+              description: "No matches found in inventory. Checking wishlist and external sources...",
+              variant: "default",
+            });
+          }}
         />
       </div>
     </VoiceProvider>
