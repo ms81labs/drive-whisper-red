@@ -8,6 +8,7 @@ import Inventory from "./pages/Inventory";
 import CarDetail from "./pages/CarDetail";
 import Comparison from "./pages/Comparison";
 import NotFound from "./pages/NotFound";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/car/:id" element={<CarDetail />} />
           <Route path="/compare" element={<Comparison />} />
+          <Route path="/admin/*" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
