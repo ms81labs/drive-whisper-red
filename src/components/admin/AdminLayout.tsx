@@ -12,9 +12,12 @@ import {
   BarChart3, 
   LogOut,
   Menu,
-  X
+  X,
+  Home,
+  ArrowLeft
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface AdminLayoutProps {
@@ -47,8 +50,23 @@ export const AdminLayout = ({ children, onLogout }: AdminLayoutProps) => {
           >
             {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
-          <h1 className="text-xl font-semibold">DreamCars Admin</h1>
-          <div className="ml-auto">
+          
+          <div className="flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Site
+            </Link>
+            <Separator orientation="vertical" className="h-6" />
+            <h1 className="text-xl font-semibold">DreamCars Admin</h1>
+          </div>
+          
+          <div className="ml-auto flex items-center gap-2">
+            <Link to="/">
+              <Button variant="outline" size="sm">
+                <Home className="mr-2 h-4 w-4" />
+                View Site
+              </Button>
+            </Link>
             <Button variant="outline" onClick={onLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Logout

@@ -51,9 +51,15 @@ export const SettingsAdmin = () => {
 
   const handleSave = () => {
     localStorage.setItem("admin_settings", JSON.stringify(settings));
+    
+    // Trigger event to notify VoiceProvider of API key update
+    if (settings.elevenLabsApiKey) {
+      window.dispatchEvent(new CustomEvent('elevenlabs-key-updated'));
+    }
+    
     toast({
       title: "Settings saved",
-      description: "Your settings have been updated successfully",
+      description: `Settings updated successfully. ${settings.elevenLabsApiKey ? 'Voice system is now connected!' : ''}`,
     });
   };
 

@@ -1,10 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Car, Heart, DollarSign, Users, TrendingUp, AlertCircle } from "lucide-react";
+import { Car, Heart, DollarSign, Users, TrendingUp, AlertCircle, CheckCircle, Clock, AlertTriangle, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 export const AdminDashboard = () => {
+  const [systemStatus, setSystemStatus] = useState<'checking' | 'ready' | 'issues'>('checking');
+  
+  useEffect(() => {
+    // Check system status
+    setTimeout(() => {
+      const settings = localStorage.getItem('admin_settings');
+      const hasElevenLabsKey = settings && JSON.parse(settings).elevenLabsApiKey;
+      setSystemStatus(hasElevenLabsKey ? 'ready' : 'issues');
+    }, 1000);
+  }, []);
   const stats = [
     { title: "Total Cars", value: "156", icon: Car, color: "text-blue-600" },
     { title: "Wishlist Items", value: "23", icon: Heart, color: "text-red-600" },

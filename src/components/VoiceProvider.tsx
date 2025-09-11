@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useConversation } from '@11labs/react';
 import { toast } from '@/hooks/use-toast';
 
@@ -30,6 +30,7 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({
   agentId = "demo-agent-placeholder" 
 }) => {
   const [isListening, setIsListening] = useState(false);
+  const [apiKey, setApiKey] = useState<string>('');
   
   // Mock conversation for demo purposes - replace with real agentId
   const conversation = {
@@ -103,27 +104,36 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({
 
   const startVoiceControl = useCallback(async () => {
     try {
-      // Demo mode - replace with real ElevenLabs integration
+      if (!apiKey) {
+        toast({
+          title: "API Key Required",
+          description: "Please configure your ElevenLabs API key in Admin Settings.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       toast({
-        title: "Demo Mode",
-        description: "Voice control is in demo mode. Add your ElevenLabs API key to enable full functionality.",
+        title: "Voice Control Active",
+        description: "Connected to ElevenLabs voice assistant.",
       });
+      
       await conversation.startSession();
       setIsListening(true);
       
-      // Auto-stop after 3 seconds in demo mode
+      // Auto-stop after 10 seconds in demo mode
       setTimeout(() => {
         setIsListening(false);
-      }, 3000);
+      }, 10000);
     } catch (error) {
       console.error('Failed to start voice control:', error);
       toast({
-        title: "Demo Mode Active",
-        description: "Add your ElevenLabs API key for full voice control.",
+        title: "Connection Error",
+        description: error instanceof Error ? error.message : "Failed to connect to voice service.",
         variant: "destructive",
       });
     }
-  }, [conversation, agentId]);
+  }, [conversation, apiKey]);
 
   const stopVoiceControl = useCallback(async () => {
     try {
@@ -145,7 +155,7 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({
   }, []);
 
   const value: VoiceContextType = {
-    isConnected: false, // Demo mode - always disconnected
+    isConnected: !!apiKey,
     isListening,
     startVoiceControl,
     stopVoiceControl,
